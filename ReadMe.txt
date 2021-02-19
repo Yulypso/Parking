@@ -1,20 +1,16 @@
-[Projet C : ESIEA 2017-2018]
-by Thierry KHAMPHOUSONE & Nimrod NDOUDI. 
+ESIEA - Projet C - Parking lot                             				2019/2020 (3ème année)
+Réalisation d'un simulateur de parking en binôme 
+
+Equipe : Thierry KHAMPHOUSONE 
+		 Amine TALEB 
+
+Classe 34 
+
+Bibliothèque graphique utilisé : Ncurses 
+
+Sons/musiques utilisés : 追光者 (piano) - musique du menu
+						 Overcooked soundtrack map - musique en cours de simulation 
+						 portail effect - sound effect : ouverture et fermeture des portes 
+						 Bass drop - sound effect : explosion de la voiture lors d'accident
 
 
--------------------------------------------------Bienvenue dans le ReadMe du jeu PICROSS GAME.------------------------------------------------ 
-
-
-
-- Pour compiler le fichier main.c : gcc -o MAIN main.c -Wall -lncurses
-
-- Pour installer la librairie complète ncurses sur votre machine via le terminal, il faut taper la commande : sudo apt-get install libncurses* 
-
-- Pour démarrer le jeu : ./MAIN
-
-
-
-
-Nous vous remercions de votre participation au jeu PICROSS GAME.
-
-----------------------------------------------------------------------------------------------------------------------------------------------

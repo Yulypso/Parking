@@ -1,3 +1,4 @@
+/************************* Librairies ************************/
 #include <stdio.h>
 #include <stdlib.h> 
 #include <time.h>
@@ -10,162 +11,106 @@
 #include <fcntl.h>
 #include <sox.h>
 
-#define Length 32
-#define Height 10
-#define NBboxcol (3+2*(col-1))
-#define NBboxlin (3+2*(lin-1))
+/************************* Structures ************************/
+typedef struct Liste Liste;
+typedef struct Vehicle Vehicle;
 
-typedef struct
+struct Liste //liste de véhicules
+{
+	Vehicle* premier;
+};
+
+typedef struct //structure décoration neige/étoile
 {
 	int x; 
 	int y;
-}	snow;
+}snow;
 
-snow flakeStart[200];
-snow flakeStop[65];
+struct Vehicle //structure véhicule
+{
+	int type; //0:voiture | 1:bus
 
-int L; // L pour Ligne 
-int C; // C pour Colonne
+	int direction;//direction 0 = gauche | direction 1 = haut | direction 2 = droite | direction 3 = bas 
+			      //direction 7 = arrêt gauche | direction 8 = arrêt haut | direction 9 = arrêt droite | direction 10 = arrêt bas
+			      //direction 5 = suppression voiture 
+			      //direction 11 = recul gauche | direction 12 = recul droite
+			      //direction 14 = arrêt droit (lors d'un recul) | direction 13 = arrêt gauche (lors d'un recul)
+			      //direction 17 = explosition de la voiture 
 
-char Welcome[33][137];
-char Congratulation[22][135];
-char Credits[46][122];
-int Kyu[7][25];
-int Cat[17][22];
-int Secret[17][18];
-int Eiffel[17][24];
-int Nimrod[3][24];
-int Whale[14][22];
-int Crane[16][19];
-int Flower[8][7];
-int Heart[16][21];
-int Esiea[15][24];
-int Paris[17][25];
+	int ID; //ID d'une voiture (100 disponibles)
+	int y; //coordonnée en y du véhicule
+	int x; //coordonnée en x du véhicule
+	int time_parking; //temps de stationnement courant (début à 0)
+	int time_parked; //temps de stationnement total 
+	int state; //0: inactif |  1: actif
+	int paytime; //prix total à payer à la sortie 
+	int color; //couleur de la voiture (7 disponibles)
+	int time_entry; //temps d'attente totale à l'entrée (barrière)
+	int time_exit; //temps d'attente totale à la sortie (barrière)
+	int time_waiting; //temps d'attente courant à l'entrée/sortie
+	int stupid_car; //état pour les voitures qui roulent en contre-sens 
+	Vehicle* suivant; //pointeur vers le véhicule suivant dans la liste chaînée 
+};
 
+
+/************************* tableaux permettant de stocker les fichiers textes ************************/
+char car_left[2][4];
+char car_right[2][4];
+char car_up[3][3];
+char car_down[3][3];
+char bus_left[3][6];
+char bus_right[3][6];
+char bus_bup[4][5];
+char bus_down[4][5];
+char bullet[2][4];
+
+/************************* autres tableaux ************************/
+snow flakeStop[65]; //tableau pour la décoration
+int ID_TAB[100]; //tableau d'ID maximum (nombre de vehicule maximum)
+int car_place[49]; //place de parking voiture
+int bus_place[25]; //place de parking bus
+int L, C; //position du click souris
+
+
+/************************* Headers : fonctions utilisées ************************/
 void ncurses_initialiser();
-void colors();
 void ncurses_souris();
-int click_souris();
 char key_pressed();
-void AFFICHAGE_PRESS_KEY(int MaxY, int MaxX);
-void AFFICHAGE_CREDITS(char TAB[46][122], int MaxY, int MaxX);
-void AFFICHAGE_WELCOME(char TAB[33][137], int MaxY, int MaxX);
-void AFFICHAGE_CONGRATULATION(char TAB[22][135], int MaxY, int MaxX);
-void REMPLISSAGE_CREDITS();
-void REMPLISSAGE_WELCOME();
-void REMPLISSAGE_CONGRATULATION();
+void colors();
+int click_souris();
 void STARS(int MaxY, int MaxX);
+void LOAD_VEHICLE();
+void Init_ID_TAB(int ID_TAB[100]);
+int Search_ADD_ID(int ID_TAB[100]);
+int Search_REMOVE_ID(int ID_TAB[100], int ID);
+Liste* initfile(Liste* file);
+void enfiler(Liste* file, int cpt_line, int cpt_col, int** Collider_map, char** map, int type, int direction, int y, int x, int ID);
+void retirer(Liste * file, int ID);
+void VALID_CHOICE(int MaxY, int MaxX);
+void EXIT_MENU(int MaxY, int MaxX, int cpt_line, int cpt_col, Liste* file, char** map, int** Collider_map, int** draw_map);
+void DISPLAY_BUTTON(int MaxY, int MaxX, int heure_de_pointe, int fluid_heavy, int instant_accident);
+void SYMBOL_CONVERTER(char c);
+int SIZE_FILE(char* file_name, int line_or_col);
+void EDIT_COLLIDER_MAP(int VehicleY, int VehicleX, int direction, int type, int cpt_line, int cpt_col, int ** Collider_map, char **map);
+void DISPLAY_COLLIDER_MAP(int cpt_line, int cpt_col, int ** Collider_map);
+void DISPLAY_MAP(Liste* file, int cpt_line, int cpt_col, char **map, int start, int** draw_map);
+void FILL_COLLIDER_MATRICE(int cpt_line, int cpt_col, char** Map, int ** Collider_map);
+void FILL_MAP_MATRICE(int cpt_line, int cpt_col, char* file_name, char **map);
+void FILL_DRAW_MATRICE(int cpt_line, int cpt_col, int** draw_map);
+int VEHICLE_GO_RIGHT(Liste* file, int cpt_line, int cpt_col, int ** Collider_map, char **map, int ID);
+int VEHICLE_GO_LEFT(Liste* file, int cpt_line, int cpt_col, int ** Collider_map, char **map, int ID);
+int VEHICLE_GO_UP(Liste* file, int cpt_line, int cpt_col, int ** Collider_map, char **map, int ID);
+int VEHICLE_GO_DOWN(Liste* file, int cpt_line, int cpt_col, int ** Collider_map, char **map, int ID);
+int VEHICLE_GO_BACK_LEFT(Liste* file, int cpt_line, int cpt_col, int ** Collider_map, char **map, int ID);
+int VEHICLE_GO_BACK_RIGHT(Liste* file, int cpt_line, int cpt_col, int ** Collider_map, char **map, int ID);
+int VEHICLE_PARK(Liste* file, int cpt_line, int cpt_col, int ** Collider_map, char **map, int ID);
+void TEST_GO_DOWN(Liste* file, int ** Collider_map, int ID);
+void BALISE(Liste* file, int cpt_line, int cpt_col, int ** Collider_map, char ** map, int ID, int heure_de_pointe, int fluid_heavy, int instant_accident);
+int FIND_DIRECTION(Liste* file, int ID);
+void UPDATE(int MaxY, int MaxX, Liste * file, int cpt_line, int cpt_col, int ** Collider_map, char **map, int** draw_map, int heure_de_pointe, int fluid_heavy, int instant_accident);
+void INIT_UPDATE(int MaxY, int MaxX, int cpt_line, int cpt_col, Liste * file, int** Collider_map, char** map, int** draw_map, int fluid_heavy, int heure_de_pointe);
+void SIMULATION(int MaxY, int MaxX);
 void HOME_PAGE(int MaxY, int MaxX);
-void RANDOM_MENU(int MaxY, int MaxX, int dev);
-void RANDOM_SIZE_AFFICHAGE(int MaxY, int MaxX);
-void RANDOM_SIZE_OK(int MaxY, int MaxX);
-void RANDOM_SIZE_LINE(int *nl, int MaxY, int MaxX);
-void RANDOM_SIZE_COL(int *nl, int *nc, int MaxY, int MaxX);
-void RANDOM_SIZE_CALL(int *nl, int *nc, int MaxY, int MaxX);
-void PICTURES_MENU(int MaxY, int MaxX);
-void LETTERS_MENU(int MaxY, int MaxX);
-void VALID_CHOICE(int lin, int col, int TAB[lin][col], int FLAGTAB[lin][col], int MaxY, int MaxX, int ExitReplay, int dev);
-void CREDITS_MENU(int MaxY, int MaxX, int dev);
-void EXIT_MENU(int lin, int col, int TAB[lin][col], int FLAGTAB[lin][col], int MaxY, int MaxX, int ExitReplay, int dev);
-int UPDATE_SNOWFLAKES(int MaxY, int MaxX, int StartStop);
-int SNOWFLAKES(int MaxY, int MaxX, int StartStop);
-void RETURN_MENU_AFFICHAGE(int MaxY, int MaxX);
-void PATTERN(int MaxY, int MaxX);
-void DRAW_TAB(int lin, int col, int TAB[lin][col]);
-void INIT_TAB(int lin, int col, int TAB[lin][col]);
-void SHOW_TAB(int lin, int col, int TAB[lin][col]);
-void SHOW_FLAGTAB(int lin, int col, int FLAGTAB[lin][col]);
-void JUMP_LEFT(int LLEFT, int CLEFT);
-void SHOW_LEFT(int LLEFT, int CLEFT, int compteur);
-void JUMP_UP(int LUP, int CUP);
-void SHOW_UP(int LUP, int CUP, int compteur);
-void FILL_TAB(int lin, int col, int TAB[lin][col]);
-void INITFLAG_TAB(int lin, int col, int TAB[lin][col]);
-int MID_CLICK(int L, int C);
-int FORM_CONDITION(int L, int Ctemp, int lin, int col, int FLAGTAB[lin][col]);
-void DRAW_CLICK(int L, int C, int temp);
-void LINE_TEST(int lin, int col, int TAB[lin][col], int FLAGTAB[lin][col]);
-void COL_TEST(int lin, int col, int TAB[lin][col], int FLAGTAB[lin][col]);
-int END_GAME(int lin, int col, int TAB[lin][col], int FLAGTAB[lin][col]);
-void SHOW_PATTERN(int lin, int col, int TAB[lin][col]);
-void REMPLISSAGE_PARIS();
-void PARIS_MODE(int lin, int col, int Paris[17][25], int FLAGTAB[lin][col], int MaxY, int MaxX, int dev);
-void INIT_PARIS(int MaxY, int MaxX, int dev);
-void REMPLISSAGE_ESIEA();
-void ESIEA_MODE(int lin, int col, int Esiea[15][24], int FLAGTAB[lin][col], int MaxY, int MaxX, int dev);
-void INIT_ESIEA(int MaxY, int MaxX, int dev);
-void REMPLISSAGE_HEART();
-void HEART_MODE(int lin, int col, int Heart[16][21], int FLAGTAB[lin][col], int MaxY, int MaxX, int dev);
-void INIT_HEART(int MaxY, int MaxX, int dev);
-void REMPLISSAGE_CRANE();
-void CRANE_MODE(int lin, int col, int Crane[16][19], int FLAGTAB[lin][col], int MaxY, int MaxX, int dev);
-void INIT_CRANE(int MaxY, int MaxX, int dev);
-void REMPLISSAGE_FLOWER();
-void FLOWER_MODE(int lin, int col, int Flower[8][7], int FLAGTAB[lin][col], int MaxY, int MaxX, int dev);
-void INIT_FLOWER(int MaxY, int MaxX, int dev);
-void REMPLISSAGE_WHALE();
-void WHALE_MODE(int lin, int col, int Whale[14][22], int FLAGTAB[lin][col], int MaxY, int MaxX, int dev);
-void INIT_WHALE(int MaxY, int MaxX, int dev);
-void REMPLISSAGE_NIMROD();
-void NIMROD_MODE(int lin, int col, int Nimrod[3][24], int FLAGTAB[lin][col], int MaxY, int MaxX, int dev);
-void INIT_NIMROD(int MaxY, int MaxX, int dev);
-void REMPLISSAGE_EIFFEL();
-void EIFFEL_MODE(int lin, int col, int Eiffel[17][24], int FLAGTAB[lin][col], int MaxY, int MaxX, int dev);
-void INIT_EIFFEL(int MaxY, int MaxX, int dev);
-void REMPLISSAGE_SECRET();
-void SECRET_MODE(int lin, int col, int Secret[17][18], int FLAGTAB[lin][col], int MaxY, int MaxX, int dev);
-void INIT_SECRET(int MaxY, int MaxX, int dev);
-void REMPLISSAGE_CAT();
-void CAT_MODE(int lin, int col, int Cat[17][22], int FLAGTAB[lin][col], int MaxY, int MaxX, int dev);
-void INIT_CAT(int MaxY, int MaxX, int dev);
-void REMPLISSAGE_KYU();
-void KYU_MODE(int lin, int col, int Kyu[7][25], int FLAGTAB[lin][col], int MaxY, int MaxX, int dev);
-void INIT_KYU(int MaxY, int MaxX, int dev);
-void INIT_RANDOM_MODE(int MaxY, int MaxX, int dev);
-void RANDOM_MODE(int lin, int col, int TAB[lin][col], int FLAGTAB[lin][col], int MaxY, int MaxX, int dev);
-void RJUMP(int mvL, int mvC);
-void RRIGHT(int mvL, int mvC);
-void REFRESH_PATTERN(int lin, int col, int FLAGTAB[lin][col]);
-void REFRESH_CLICK(int lin, int col, int FLAGTAB[lin][col]);
-void VALID_CLICK(int MaxY, int MaxX);
-void EXIT_GAME(int MaxY, int MaxX);
-void LETTERS_PAGE(int MaxY, int MaxX, int dev);
-void PICTURES_PAGE(int MaxY, int MaxX, int dev);
-void RANDOM_PAGE(int MaxY, int MaxX, int dev);
-void MENU_THEME();
-void MAIN_MENU(int MaxY, int MaxX, int dev);
+void MAIN_MENU(int MaxY, int MaxX);
 void LANCEMENT_JEU();
-int main();
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
